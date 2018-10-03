@@ -1,4 +1,4 @@
-package com.mandi.tech.PopPark.wxapi
+package cn.ypz.com.rxwechattoolsmaster.wxapi
 
 import android.app.Activity
 import android.content.Intent
