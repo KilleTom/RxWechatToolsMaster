@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
 
+import com.tencent.mm.opensdk.modelbase.BaseResp;
 import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
 import com.tencent.mm.opensdk.modelmsg.WXGameVideoFileObject;
 import com.tencent.mm.opensdk.modelmsg.WXImageObject;
@@ -38,7 +39,7 @@ public abstract class RxWeChatTools {
     }
 
     public void initApplication(Context context, String appId, String secret, String grant_type) {
-        if (context != null && this.context != null) {
+        if (context != null && this.context == null) {
             this.context = context;
             this.secret = secret;
             this.grant_type = grant_type;
@@ -218,7 +219,9 @@ public abstract class RxWeChatTools {
         iwxapi.handleIntent(intent,iwxapiEventHandler);
     }
 
-    public abstract void login();
+    public abstract void login(BaseResp resp);
+
+    public abstract void pay(BaseResp baseResp);
 
 
 
