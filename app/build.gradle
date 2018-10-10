@@ -33,4 +33,14 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation project(':rxwechattools')
     implementation 'com.tencent.mm.opensdk:wechat-sdk-android-with-mta:+'
+    implementation('com.squareup.retrofit2:retrofit:2.4.0') {
+        exclude group: 'com.squareup.okhttp3'
+    }
+      implementation('com.squareup.retrofit2:converter-gson:2.4.0') {
+            exclude group: 'com.google.code.gson'
+            exclude group: 'com.squareup.okhttp3'
+        }
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.squareup.okhttp3:okhttp:3.11.0'
+
 }

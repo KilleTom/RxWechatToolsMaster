@@ -5,15 +5,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import cn.ypz.com.rxwechattoolsmaster.R
+import cn.ypz.com.rxwechattoolsmaster.WeChatTools
 import com.tencent.mm.opensdk.constants.ConstantsAPI
 import com.tencent.mm.opensdk.modelbase.BaseReq
 import com.tencent.mm.opensdk.modelbase.BaseResp
-import com.tencent.mm.opensdk.openapi.IWXAPI
 import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler
 
 class WXEntryActivity : Activity(), IWXAPIEventHandler {
 
-    private lateinit var iwxapi: IWXAPI
     override fun onResp(p0: BaseResp?)  = when (p0!!.type) {
         ConstantsAPI.COMMAND_SENDMESSAGE_TO_WX -> {
             finish()
@@ -21,7 +20,7 @@ class WXEntryActivity : Activity(), IWXAPIEventHandler {
         ConstantsAPI.COMMAND_SENDAUTH-> when(p0.errCode){
             0->{
                 try {
-                    /*WXUtil.getWxUtil(this).login(p0)*/
+                    WeChatTools.getWeChatTools().login(p0)
                 } catch (e: Exception) {
                     Log.i("ypz",e.message)
                 }
@@ -41,19 +40,18 @@ class WXEntryActivity : Activity(), IWXAPIEventHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_wxentry)
-       /* iwxapi = WXUtil.getWxUtil(this).iwxapi
-        WXUtil.getWxUtil(this).iwxapi.handleIntent(intent,this)*/
+        WeChatTools.getWeChatTools().iwaxapiHandleIntent(intent,this)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
-     /*   WXUtil.getWxUtil(this).iwxapi.handleIntent(intent,this)*/
+        WeChatTools.getWeChatTools().iwaxapiHandleIntent(intent,this)
     }
 
     private fun showErrorMessage(message:String){
         Log.i("ypz",message)
-       /* RxToast.error(this,message).show()*/
+        WeChatTools.getWeChatTools().iwaxapiHandleIntent(intent,this)
         Log.i("ypz",message)
         finish()
     }
