@@ -1,4 +1,4 @@
-package cn.ypz.com.rxwechattoolsmaster;
+package cn.ypz.com.rxwechatclient;
 
 import android.util.Log;
 
@@ -23,8 +23,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * Created by 易庞宙 on 2018 2018/10/10 18:38
  * email: 1986545332@qq.com
  */
-public class WeChatTools extends RxWeChatTools {
-    private static WeChatTools weChatTools;
+public class RxWeChatClient extends RxWeChatTools {
+    private static RxWeChatClient weChatTools;
     private WeChatApi weChatApi;
 
     private Callback<WeChatLoginResult> weChatLoginResultCallback = new BaseCallBack<WeChatLoginResult>().callback(new NetCallBack<WeChatLoginResult>() {
@@ -58,16 +58,16 @@ public class WeChatTools extends RxWeChatTools {
 
     }
 
-    public static WeChatTools getWeChatTools() {
+    public static RxWeChatClient getWeChatTools() {
         if (weChatTools == null) {
-            synchronized (WeChatTools.class) {
-                weChatTools = new WeChatTools();
+            synchronized (RxWeChatClient.class) {
+                weChatTools = new RxWeChatClient();
             }
         }
         return weChatTools;
     }
 
-    private WeChatTools() {
+    private RxWeChatClient() {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(20, TimeUnit.SECONDS)
@@ -95,10 +95,6 @@ public class WeChatTools extends RxWeChatTools {
         weChatUserInfoCall.enqueue(weChatUserInfoCallback);
     }
 
-    @Override
-    public void pay(BaseResp baseResp) {
-
-    }
 
     protected void loginError(int code, String errorMessage) {
         Log.e("WeChatTools", "loginError:\nloginErrorCode：" + code + "\nloginErrorMessage" + errorMessage);
@@ -139,4 +135,6 @@ public class WeChatTools extends RxWeChatTools {
         void error(int code, String message);
 
     }
+
+
 }

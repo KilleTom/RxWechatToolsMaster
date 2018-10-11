@@ -1,4 +1,4 @@
-package cn.ypz.com.rxwechattoolsmaster;
+package cn.ypz.com.rxwechatclient;
 
 import cn.ypz.com.rxwechattools.WeChatUserInfo;
 import cn.ypz.com.rxwechattools.WeChatLoginResult;

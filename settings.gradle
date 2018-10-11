@@ -1,1 +1,1 @@
-include ':app', ':rxwechattools'
+include ':app', ':rxwechattools', ':rxwechatclient'

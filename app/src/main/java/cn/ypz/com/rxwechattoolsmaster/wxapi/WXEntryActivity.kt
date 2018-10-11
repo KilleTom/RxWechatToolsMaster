@@ -4,12 +4,15 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import cn.ypz.com.rxwechatclient.RxWeChatClient
 import cn.ypz.com.rxwechattoolsmaster.R
-import cn.ypz.com.rxwechattoolsmaster.WeChatTools
 import com.tencent.mm.opensdk.constants.ConstantsAPI
 import com.tencent.mm.opensdk.modelbase.BaseReq
 import com.tencent.mm.opensdk.modelbase.BaseResp
+import com.tencent.mm.opensdk.modelbiz.WXLaunchMiniProgram
 import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler
+
+
 
 class WXEntryActivity : Activity(), IWXAPIEventHandler {
 
@@ -20,7 +23,7 @@ class WXEntryActivity : Activity(), IWXAPIEventHandler {
         ConstantsAPI.COMMAND_SENDAUTH-> when(p0.errCode){
             0->{
                 try {
-                    WeChatTools.getWeChatTools().login(p0)
+                    RxWeChatClient.getWeChatTools().login(p0)
                 } catch (e: Exception) {
                     Log.i("ypz",e.message)
                 }
@@ -30,7 +33,10 @@ class WXEntryActivity : Activity(), IWXAPIEventHandler {
             -2->showErrorMessage("用户取消登录")
             else ->showErrorMessage("........")
         }
-
+        ConstantsAPI.COMMAND_LAUNCH_WX_MINIPROGRAM->{
+                val launchMiniProResp = p0 as WXLaunchMiniProgram.Resp
+                val extraData = launchMiniProResp.extMsg //对应小程序组件 <button open-type="launchApp"> 中的 app-parameter 属性
+            }
         else -> showErrorMessage(p0.errStr)
     }
     override fun onReq(p0: BaseReq?){
@@ -40,18 +46,18 @@ class WXEntryActivity : Activity(), IWXAPIEventHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_wxentry)
-        WeChatTools.getWeChatTools().iwaxapiHandleIntent(intent,this)
+        RxWeChatClient.getWeChatTools().iwaxapiHandleIntent(intent,this)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)
-        WeChatTools.getWeChatTools().iwaxapiHandleIntent(intent,this)
+        RxWeChatClient.getWeChatTools().iwaxapiHandleIntent(intent,this)
     }
 
     private fun showErrorMessage(message:String){
         Log.i("ypz",message)
-        WeChatTools.getWeChatTools().iwaxapiHandleIntent(intent,this)
+        RxWeChatClient.getWeChatTools().iwaxapiHandleIntent(intent,this)
         Log.i("ypz",message)
         finish()
     }

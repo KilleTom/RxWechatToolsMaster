@@ -16,11 +16,14 @@ import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
 import com.tencent.mm.opensdk.modelmsg.WXTextObject;
 import com.tencent.mm.opensdk.modelmsg.WXVideoFileObject;
 import com.tencent.mm.opensdk.modelmsg.WXVideoObject;
+import com.tencent.mm.opensdk.modelpay.PayReq;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The type Rx we chat tools.
@@ -51,11 +54,17 @@ public abstract class RxWeChatTools {
     protected String grant_type;
 
     /**
+     * The Pay callbacks.
+     */
+    protected List<PayCallback> payCallbacks;
+
+    /**
      * Instantiates a new Rx we chat tools.
      */
     protected RxWeChatTools() {
-
+        payCallbacks = new ArrayList<>();
     }
+
 
     /**
      * Init application.
@@ -76,6 +85,27 @@ public abstract class RxWeChatTools {
             iwxapi = WXAPIFactory.createWXAPI(context, appId, true);
             iwxapi.registerApp(appId);
         }
+    }
+
+    /**
+     * Add pay callback.
+     * 添加微信支付回调
+     *
+     * @param payCallback the pay callback
+     */
+    public void addPayCallback(PayCallback payCallback) {
+        if (!payCallbacks.contains(payCallback))
+            payCallbacks.add(payCallback);
+    }
+
+    /**
+     * Remove pay callback.
+     * 当不需要的回调随着页面或者某些服务被销毁回收时，调用此方法避免内存溢出
+     *
+     * @param payCallback the pay callback
+     */
+    public void removePayCallback(PayCallback payCallback) {
+        if (payCallbacks.contains(payCallback)) payCallbacks.remove(payCallback);
     }
 
     /**
@@ -492,11 +522,68 @@ public abstract class RxWeChatTools {
     public abstract void login(BaseResp resp);
 
     /**
-     * Pay.
+     * Pay.微信支付回调
      *
      * @param baseResp the base resp
      */
-    public abstract void pay(BaseResp baseResp);
+    public void payCall(BaseResp baseResp) {
+        int errorCode = baseResp.errCode;
+        if (payCallbacks == null && payCallbacks.size() ==0) {
+            return;
+        }
+        if (errorCode == 0) {
+            for (PayCallback callback : payCallbacks) {
+                callback.queryServerPurchaseOrder();
+            }
+        } else if (errorCode == -1) {
+            for (PayCallback callback : payCallbacks) {
+                callback.notFinshServerPurchaseOrder();
+            }
+        } else if (errorCode == -2) {
+            for (PayCallback callback : payCallbacks) {
+                callback.cancleServerPurchaseOrder();
+            }
+        }
+    }
 
+    /**
+     * Pay send wechat.
+     *
+     * @param partnerId    the partner id
+     * @param prepayId     the prepay id
+     * @param packageValue the package value
+     * @param nonceStr     the nonce str
+     * @param timeStamp    the time stamp
+     * @param sign         the sign
+     */
+    public void paySendWeChat(String partnerId, String prepayId, String packageValue, String nonceStr, String timeStamp, String sign) {
+        PayReq request = new PayReq();
+        request.appId = appId;
+        request.partnerId = partnerId;
+        request.prepayId = prepayId;
+        request.packageValue = packageValue;
+        request.nonceStr = nonceStr;
+        request.timeStamp = timeStamp;
+        request.sign = sign;
+        iwxapi.sendReq(request);
+    }
 
+    /**
+     * The interface Pay callback.
+     */
+    public interface PayCallback {
+        /**
+         * 这里写实际微信支付成功后查询服务器订单是否成功
+         */
+        void queryServerPurchaseOrder();
+
+        /**
+         * 这里写实际微信支付未完成的时候回调
+         * */
+        void notFinshServerPurchaseOrder();
+        /**
+         * 这里写微信拒绝支付或者取消支付时候通知服务器取消订单
+         */
+        void cancleServerPurchaseOrder();
+    }
 }
