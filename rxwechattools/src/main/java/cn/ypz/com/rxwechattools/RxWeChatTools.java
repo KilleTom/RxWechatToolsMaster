@@ -3,8 +3,10 @@ package cn.ypz.com.rxwechattools;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.tencent.mm.opensdk.modelbase.BaseResp;
 import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
@@ -16,6 +18,7 @@ import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
 import com.tencent.mm.opensdk.modelmsg.WXTextObject;
 import com.tencent.mm.opensdk.modelmsg.WXVideoFileObject;
 import com.tencent.mm.opensdk.modelmsg.WXVideoObject;
+import com.tencent.mm.opensdk.modelmsg.WXWebpageObject;
 import com.tencent.mm.opensdk.modelpay.PayReq;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler;
@@ -113,12 +116,11 @@ public abstract class RxWeChatTools {
      * 不带描述图片的文本分享
      *
      * @param message     the message
-     * @param description the description
      * @param transaction the transaction
      * @param toWXReqType the to wx req type
      */
-    public void shareText(String message, String description, String transaction, SendMessageToWXReqType toWXReqType) {
-        shareTextByThumb(null, message, description, transaction, toWXReqType);
+    public void shareText(String message, String transaction, SendMessageToWXReqType toWXReqType) {
+        shareTextByThumb(null,"", message, transaction, "", toWXReqType,null);
     }
 
     /**
@@ -126,38 +128,32 @@ public abstract class RxWeChatTools {
      * Share text by thumb.
      *
      * @param thumbBitmap    the thumb bitmap
-     * @param message        the message
      * @param description    the description
      * @param transaction    the transaction
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareTextByThumb(Bitmap thumbBitmap, String message, String description, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
-        shareTextByThumb(bitmap2Bytes(thumbBitmap, compressFormat), message, description, transaction, toWXReqType);
+
+    public void shareTextByThumb(Bitmap thumbBitmap,String title, String description, String transaction, String url, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
+        if (TextUtils.isEmpty(description)) description = "";
+        if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/textByThumb";
+        WXMediaMessage mediaMessage = new WXMediaMessage();
+        if (thumbBitmap != null) {
+            if (TextUtils.isEmpty(title)&&context!=null) title = context.getApplicationInfo().name;
+            if (TextUtils.isEmpty(url)) url = "https://www.baidu.com";
+            mediaMessage.mediaObject = new WXWebpageObject(url);
+            mediaMessage.setThumbImage(safeThumb(thumbBitmap,compressFormat));
+            mediaMessage.title = title;
+        } else {
+            mediaMessage.mediaObject = new WXTextObject(description);
+        }
+        mediaMessage.description = description;
+        sendWeChat(mediaMessage, transaction, toWXReqType);
     }
 
-    /**
-     * WeChat with text sharing
-     * Share text by thumb.
-     *
-     * @param thumbDates  the thumb dates
-     * @param message     the message
-     * @param description the description
-     * @param transaction the transaction
-     * @param toWXReqType the to wx req type
-     */
-    public void shareTextByThumb(byte[] thumbDates, String message, String description, String transaction, SendMessageToWXReqType toWXReqType) {
-        if (TextUtils.isEmpty(description)) description = "";
-        if (TextUtils.isEmpty(message)) message = "";
-        if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/textByThumb";
-        WXTextObject textObject = new WXTextObject();
-        textObject.text = message;
-        WXMediaMessage mediaMessage = new WXMediaMessage();
-        mediaMessage.mediaObject = textObject;
-        mediaMessage.description = description;
-        if (thumbDates != null)
-            mediaMessage.thumbData = thumbDates;
-        sendWeChat(mediaMessage, transaction, toWXReqType);
+
+    public void shareImage(int resourcesId, String description, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
+        shareImage(BitmapFactory.decodeResource(context.getResources(), resourcesId), description, transaction, toWXReqType, compressFormat);
     }
 
     /**
@@ -169,10 +165,10 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareImage(Bitmap thumbBitmap, String description, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
-        if (thumbBitmap == null) shareText(description, description, transaction, toWXReqType);
+    public void shareImage(Bitmap thumbBitmap, String description, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
+        if (thumbBitmap == null) shareText(description, transaction, toWXReqType);
         else
-            shareImage(bitmap2Bytes(thumbBitmap, compressFormat), description, transaction, toWXReqType);
+            shareImage(bitmap2Bytes(thumbBitmap, compressFormat), transaction, toWXReqType);
     }
 
     /**
@@ -186,27 +182,24 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareScareImage(Bitmap thumbBitmap, int width, int height, String description, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
-        if (thumbBitmap == null) shareText(description, description, transaction, toWXReqType);
+    public void shareScareImage(Bitmap thumbBitmap, int width, int height, String description, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
+        if (thumbBitmap == null) shareText(description, transaction, toWXReqType);
         else
-            shareImage(bitmap2Bytes(scaledBitmap(thumbBitmap, width, height), compressFormat), description, transaction, toWXReqType);
+            shareImage(bitmap2Bytes(scaledBitmap(safeThumb(thumbBitmap,compressFormat), width, height), compressFormat),  transaction, toWXReqType);
     }
 
     /**
      * Share image.
      *
      * @param thumbDates  the thumb dates
-     * @param description the description
      * @param transaction the transaction
      * @param toWXReqType the to wx req type
      */
-    public void shareImage(byte[] thumbDates, String description, String transaction, SendMessageToWXReqType toWXReqType) {
+    public void shareImage(byte[] thumbDates,  String transaction, SendMessageToWXReqType toWXReqType) {
         if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/img";
-        if (TextUtils.isEmpty(description)) description = "";
         WXImageObject wxImageObject = new WXImageObject(thumbDates);
         WXMediaMessage msg = new WXMediaMessage();
         msg.mediaObject = wxImageObject;
-        msg.description = description;
         SendMessageToWX.Req req = new SendMessageToWX.Req();
         req.transaction = transaction;
         req.message = msg;
@@ -250,7 +243,7 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareMusic(String url, String title, String description, Bitmap thumbBitmap, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
+    public void shareMusic(String url, String title, String description, Bitmap thumbBitmap, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
         shareMusic(url, title, description, bitmap2Bytes(thumbBitmap, compressFormat), transaction, toWXReqType);
     }
 
@@ -265,7 +258,7 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareVideoUrl(String url, String title, String description, Bitmap thumbBitmap, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
+    public void shareVideoUrl(String url, String title, String description, Bitmap thumbBitmap, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
         shareVideoUrl(url, title, description, bitmap2Bytes(thumbBitmap, compressFormat), transaction, toWXReqType);
     }
 
@@ -305,7 +298,7 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareVideoFile(String path, String title, String description, Bitmap thumbBitmap, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
+    public void shareVideoFile(String path, String title, String description, Bitmap thumbBitmap, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
         shareVideoFile(path, title, description, bitmap2Bytes(thumbBitmap, compressFormat), transaction, toWXReqType);
     }
 
@@ -347,7 +340,7 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareVideoGame(String path, String thumUrl, String videoUrl, String title, String description, Bitmap bitmap, String transaction, SendMessageToWXReqType toWXReqType, Bitmap.CompressFormat compressFormat) {
+    public void shareVideoGame(String path, String thumUrl, String videoUrl, String title, String description, Bitmap bitmap, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
         if (TextUtils.isEmpty(title)) title = "";
         if (TextUtils.isEmpty(description)) description = "";
         if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/video_game";
@@ -360,6 +353,50 @@ public abstract class RxWeChatTools {
         sendWeChat(msg, transaction, toWXReqType);
     }
 
+    /**
+     * Sharpe mini program.
+     *
+     * @param miniUrl                the mini url
+     * @param miniId                 the mini id
+     * @param miniPath               the mini path
+     * @param title                  the title
+     * @param description            the description
+     * @param bitmap                 the bitmap
+     * @param compressFormat         the compress format
+     * @param sendMessageToWXReqType the send message to wx req type
+     * @param transaction            the transaction
+     * @param miniType               the mini type
+     */
+    protected void sharpeMiniProgram(String miniUrl, String miniId, String miniPath, String title, String description, Bitmap bitmap, CompressFormat compressFormat, SendMessageToWXReqType sendMessageToWXReqType, String transaction, MiniType miniType) {
+        if (TextUtils.isEmpty(title)) title = "";
+        if (TextUtils.isEmpty(description)) description = "";
+        if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/mini";
+        WXMiniProgramObject wxMiniProgramObject = new WXMiniProgramObject();
+        wxMiniProgramObject.webpageUrl = miniUrl;
+        wxMiniProgramObject.userName = miniId;
+        wxMiniProgramObject.path = miniPath;
+        if (miniType == MiniType.MINI_RELEASE) wxMiniProgramObject.miniprogramType = 0;
+        else if (miniType == MiniType.MINI_TEST) wxMiniProgramObject.miniprogramType = 1;
+        else wxMiniProgramObject.miniprogramType = 2;
+        WXMediaMessage msg = new WXMediaMessage(wxMiniProgramObject);
+        msg.title = title;
+        msg.description = description;
+        byte[] bitmapSize = null;
+        if (bitmap != null) {
+            bitmapSize = bitmap2Bytes(bitmap, compressFormat);
+            int size = 1024 * 127;
+            int length = bitmapSize.length;
+            if (length >= size) {
+                double prang = bitmapSize.length / size;
+                prang += 1;
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inSampleSize = (int) prang;
+                bitmapSize = bitmap2Bytes(BitmapFactory.decodeByteArray(bitmapSize, 0, length, options), compressFormat);
+            }
+            msg.thumbData = bitmapSize;
+        }
+        sendWeChat(msg, transaction, sendMessageToWXReqType);
+    }
 
     /**
      * Send we chat.
@@ -389,51 +426,6 @@ public abstract class RxWeChatTools {
                     break;
             }
         iwxapi.sendReq(req);
-    }
-
-    /**
-     * Sharpe mini program.
-     *
-     * @param miniUrl                the mini url
-     * @param miniId                 the mini id
-     * @param miniPath               the mini path
-     * @param title                  the title
-     * @param description            the description
-     * @param bitmap                 the bitmap
-     * @param compressFormat         the compress format
-     * @param sendMessageToWXReqType the send message to wx req type
-     * @param transaction            the transaction
-     * @param miniType               the mini type
-     */
-    protected void sharpeMiniProgram(String miniUrl, String miniId, String miniPath, String title, String description, Bitmap bitmap, Bitmap.CompressFormat compressFormat, SendMessageToWXReqType sendMessageToWXReqType, String transaction, MiniType miniType) {
-        if (TextUtils.isEmpty(title)) title = "";
-        if (TextUtils.isEmpty(description)) description = "";
-        if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/mini";
-        WXMiniProgramObject wxMiniProgramObject = new WXMiniProgramObject();
-        wxMiniProgramObject.webpageUrl = miniUrl;
-        wxMiniProgramObject.userName = miniId;
-        wxMiniProgramObject.path = miniPath;
-        if (miniType == MiniType.MINI_RELEASE) wxMiniProgramObject.miniprogramType = 0;
-        else if (miniType == MiniType.MINI_TEST) wxMiniProgramObject.miniprogramType = 1;
-        else wxMiniProgramObject.miniprogramType = 2;
-        WXMediaMessage msg = new WXMediaMessage(wxMiniProgramObject);
-        msg.title = title;
-        msg.description = description;
-        byte[] bitmapSize = null;
-        if (bitmap != null) {
-            bitmapSize = bitmap2Bytes(bitmap, compressFormat);
-            int size = 1024 * 127;
-            int length = bitmapSize.length;
-            if (length >= size) {
-                double prang = bitmapSize.length / size;
-                prang += 1;
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = (int) prang;
-                bitmapSize = bitmap2Bytes(BitmapFactory.decodeByteArray(bitmapSize, 0, length, options), compressFormat);
-            }
-            msg.thumbData = bitmapSize;
-        }
-        sendWeChat(msg, transaction, sendMessageToWXReqType);
     }
 
 
@@ -485,11 +477,42 @@ public abstract class RxWeChatTools {
      * @param format 格式
      * @return 字节数组 byte [ ]
      */
-    protected byte[] bitmap2Bytes(Bitmap bitmap, Bitmap.CompressFormat format) {
+    protected byte[] bitmap2Bytes(Bitmap bitmap, CompressFormat format) {
         if (bitmap == null) return null;
+        bitmap = safeThumb(bitmap, format);
         ByteArrayOutputStream baas = new ByteArrayOutputStream();
         bitmap.compress(format, 100, baas);
         return baas.toByteArray();
+    }
+
+    protected Bitmap safeThumb(Bitmap bitmap, CompressFormat format) {
+        if (bitmap == null) return null;
+        ByteArrayOutputStream baas = new ByteArrayOutputStream();
+        bitmap.compress(format, 100, baas);
+        Bitmap.Config config = bitmap.getConfig();
+        int length = baas.toByteArray().length;
+        Log.i("ypz", baas.toByteArray().length + "");
+        Log.i("ypz", length + "");
+        int max = 30720;
+        switch (config) {
+            case ALPHA_8:
+            case RGB_565:
+                max *= 2;
+                break;
+            case ARGB_4444:
+                max *= 8;
+                break;
+            case ARGB_8888:
+                max *= 16;
+                break;
+        }
+        if (length > max) {
+            float range = length / max;
+            baas.reset();
+            int width = (int) (bitmap.getWidth() / range);
+            int h = (int) (bitmap.getHeight() / range);
+            return Bitmap.createScaledBitmap(bitmap, width, h, true);
+        } else return bitmap;
     }
 
     /**
@@ -528,7 +551,7 @@ public abstract class RxWeChatTools {
      */
     public void payCall(BaseResp baseResp) {
         int errorCode = baseResp.errCode;
-        if (payCallbacks == null && payCallbacks.size() ==0) {
+        if (payCallbacks == null && payCallbacks.size() == 0) {
             return;
         }
         if (errorCode == 0) {
@@ -579,8 +602,9 @@ public abstract class RxWeChatTools {
 
         /**
          * 这里写实际微信支付未完成的时候回调
-         * */
+         */
         void notFinshServerPurchaseOrder();
+
         /**
          * 这里写微信拒绝支付或者取消支付时候通知服务器取消订单
          */
