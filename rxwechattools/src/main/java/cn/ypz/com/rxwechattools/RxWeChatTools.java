@@ -331,7 +331,7 @@ public abstract class RxWeChatTools {
      * Share video game.
      *
      * @param path           the path
-     * @param thumUrl        the thum url
+     * @param thumbUrl        the thum url
      * @param videoUrl       the video url
      * @param title          the title
      * @param description    the description
@@ -340,11 +340,11 @@ public abstract class RxWeChatTools {
      * @param toWXReqType    the to wx req type
      * @param compressFormat the compress format
      */
-    public void shareVideoGame(String path, String thumUrl, String videoUrl, String title, String description, Bitmap bitmap, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
+    public void shareVideoGame(String path, String thumbUrl, String videoUrl, String title, String description, Bitmap bitmap, String transaction, SendMessageToWXReqType toWXReqType, CompressFormat compressFormat) {
         if (TextUtils.isEmpty(title)) title = "";
         if (TextUtils.isEmpty(description)) description = "";
         if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/video_game";
-        WXGameVideoFileObject wxGameVideoFileObject = new WXGameVideoFileObject(path, videoUrl, thumUrl);
+        WXGameVideoFileObject wxGameVideoFileObject = new WXGameVideoFileObject(path, videoUrl, thumbUrl);
         WXMediaMessage msg = new WXMediaMessage(wxGameVideoFileObject);
         msg.title = title;
         msg.description = description;
@@ -367,7 +367,7 @@ public abstract class RxWeChatTools {
      * @param transaction            the transaction
      * @param miniType               the mini type
      */
-    protected void sharpeMiniProgram(String miniUrl, String miniId, String miniPath, String title, String description, Bitmap bitmap, CompressFormat compressFormat, SendMessageToWXReqType sendMessageToWXReqType, String transaction, MiniType miniType) {
+    public void shareMiniProgram(String miniUrl, String miniId, String miniPath, String title, String description, Bitmap bitmap, CompressFormat compressFormat, SendMessageToWXReqType sendMessageToWXReqType, String transaction, MiniType miniType) {
         if (TextUtils.isEmpty(title)) title = "";
         if (TextUtils.isEmpty(description)) description = "";
         if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/mini";
@@ -381,19 +381,8 @@ public abstract class RxWeChatTools {
         WXMediaMessage msg = new WXMediaMessage(wxMiniProgramObject);
         msg.title = title;
         msg.description = description;
-        byte[] bitmapSize = null;
         if (bitmap != null) {
-            bitmapSize = bitmap2Bytes(bitmap, compressFormat);
-            int size = 1024 * 127;
-            int length = bitmapSize.length;
-            if (length >= size) {
-                double prang = bitmapSize.length / size;
-                prang += 1;
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = (int) prang;
-                bitmapSize = bitmap2Bytes(BitmapFactory.decodeByteArray(bitmapSize, 0, length, options), compressFormat);
-            }
-            msg.thumbData = bitmapSize;
+            msg.thumbData = bitmap2Bytes(bitmap, compressFormat);
         }
         sendWeChat(msg, transaction, sendMessageToWXReqType);
     }

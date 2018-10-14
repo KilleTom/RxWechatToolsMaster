@@ -7,11 +7,13 @@ import com.google.gson.GsonBuilder;
 import com.tencent.mm.opensdk.modelbase.BaseResp;
 import com.tencent.mm.opensdk.modelmsg.SendAuth;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import cn.ypz.com.rxwechattools.RxWeChatTools;
-import cn.ypz.com.rxwechattools.WeChatUserInfo;
 import cn.ypz.com.rxwechattools.WeChatLoginResult;
+import cn.ypz.com.rxwechattools.WeChatUserInfo;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -26,7 +28,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RxWeChatClient extends RxWeChatTools {
     private static RxWeChatClient weChatTools;
     private WeChatApi weChatApi;
-
+    private List<WeChatLoginCallBack> loginCallBacks;
+    private boolean isOpenLog;
     private Callback<WeChatLoginResult> weChatLoginResultCallback = new BaseCallBack<WeChatLoginResult>().callback(new NetCallBack<WeChatLoginResult>() {
         @Override
         public void callBackSuccessful(WeChatLoginResult wechatLoginResult) {
@@ -55,7 +58,9 @@ public class RxWeChatClient extends RxWeChatTools {
      * 这里写将获取到的微信用户信息回调上传至服务器或者App自己保存相应信息
      */
     protected void weChatUserMessageToServer(WeChatUserInfo weChatUserInfo) {
-
+        for (WeChatLoginCallBack loginCallBack : loginCallBacks) {
+            loginCallBack.weChatUserMessageToServer(weChatUserInfo);
+        }
     }
 
     public static RxWeChatClient getWeChatTools() {
@@ -65,6 +70,17 @@ public class RxWeChatClient extends RxWeChatTools {
             }
         }
         return weChatTools;
+    }
+
+    public void setLoginCallBack(WeChatLoginCallBack loginCallBack) {
+        if (loginCallBack != null)
+            if (!loginCallBacks.contains(loginCallBack))
+                loginCallBacks.add(loginCallBack);
+    }
+
+    public void removeLoginCallBack(WeChatLoginCallBack loginCallBack) {
+        if (loginCallBack != null && loginCallBacks.contains(loginCallBack))
+            loginCallBacks.remove(loginCallBack);
     }
 
     private RxWeChatClient() {
@@ -80,7 +96,12 @@ public class RxWeChatClient extends RxWeChatTools {
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .build();
         weChatApi = retrofit.create(WeChatApi.class);
-        Log.i("ypz", "next_0");
+        loginCallBacks = new ArrayList<>();
+    }
+
+    public RxWeChatClient setOpenLog(boolean isOpenLog) {
+        this.isOpenLog = isOpenLog;
+        return this;
     }
 
     @Override
@@ -89,19 +110,27 @@ public class RxWeChatClient extends RxWeChatTools {
         weChatLoginResultCall.enqueue(weChatLoginResultCallback);
     }
 
-    private void getUserInfo(String access_token, String openid) {
+    protected void getUserInfo(String access_token, String openid) {
+        for (WeChatLoginCallBack login : loginCallBacks) {
+            login.weChatUserTokenAndOpenidCall(access_token, openid);
+        }
         Call<WeChatUserInfo> weChatUserInfoCall = weChatApi.weChatUserInforCall(access_token, openid);
-        Log.i("ypz", "getUserInfo" + weChatUserInfoCall.request().url().toString());
+        if (isOpenLog)
+            Log.i("ypz", "getUserInfoUrl:" + weChatUserInfoCall.request().url().toString());
         weChatUserInfoCall.enqueue(weChatUserInfoCallback);
     }
 
 
     protected void loginError(int code, String errorMessage) {
-        Log.e("WeChatTools", "loginError:\nloginErrorCode：" + code + "\nloginErrorMessage" + errorMessage);
+        if (isOpenLog)
+            Log.e("WeChatTools", "loginError:\nloginErrorCode：" + code + "\nloginErrorMessage" + errorMessage);
+        for (WeChatLoginCallBack loginCallBack : loginCallBacks)
+            loginCallBack.loginError(code, errorMessage);
     }
 
     protected void loginGetUserMessageError(int code, String errorMessage) {
-
+        for (WeChatLoginCallBack loginCallBack : loginCallBacks)
+            loginCallBack.loginError(code, errorMessage);
     }
 
     protected class BaseCallBack<callbackClass> {
@@ -136,5 +165,12 @@ public class RxWeChatClient extends RxWeChatTools {
 
     }
 
+    public interface WeChatLoginCallBack {
 
+        void weChatUserTokenAndOpenidCall(String access_token, String openid);
+
+        void weChatUserMessageToServer(WeChatUserInfo weChatUserInfo);
+
+        void loginError(int code, String errorMessage);
+    }
 }
