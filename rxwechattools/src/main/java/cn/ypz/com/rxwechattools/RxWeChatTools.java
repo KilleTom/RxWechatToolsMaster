@@ -363,11 +363,10 @@ public abstract class RxWeChatTools {
      * @param description            the description
      * @param bitmap                 the bitmap
      * @param compressFormat         the compress format
-     * @param sendMessageToWXReqType the send message to wx req type
      * @param transaction            the transaction
      * @param miniType               the mini type
      */
-    public void shareMiniProgram(String miniUrl, String miniId, String miniPath, String title, String description, Bitmap bitmap, CompressFormat compressFormat, SendMessageToWXReqType sendMessageToWXReqType, String transaction, MiniType miniType) {
+    public void shareMiniProgram(String miniUrl, String miniId, String miniPath, String title, String description, Bitmap bitmap, CompressFormat compressFormat, String transaction, MiniType miniType) {
         if (TextUtils.isEmpty(title)) title = "";
         if (TextUtils.isEmpty(description)) description = "";
         if (TextUtils.isEmpty(transaction)) transaction = "RxWeChatTools/mini";
@@ -384,7 +383,7 @@ public abstract class RxWeChatTools {
         if (bitmap != null) {
             msg.thumbData = bitmap2Bytes(bitmap, compressFormat);
         }
-        sendWeChat(msg, transaction, sendMessageToWXReqType);
+        sendWeChat(msg, transaction, SendMessageToWXReqType.WXSceneSession);
     }
 
     /**
