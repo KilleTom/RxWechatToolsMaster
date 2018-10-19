@@ -1,6 +1,6 @@
 # RxWechatToolsMaster(微信集成开发库)
 ## How to used?
-used way：https://jitpack.io/#KilleTom/KilleTomRxMaterialDesignUtil this web can telled your how many versions can provide to be used;
+used way：https://jitpack.io/#KilleTom/RxWechatToolsMaster this web can telled your how many versions can provide to be used;
 but if you don't want to chose , you can copy this to use.
 ### First
 Pasue this message in the builde.gradle(project)file:
