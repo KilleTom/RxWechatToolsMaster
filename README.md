@@ -5,9 +5,6 @@ but if you don't want to chose , you can copy this to use.
 ### First
 Pasue this message in the builde.gradle(project)file:
 ```gradle
-dependencies {
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.0'
-    }
 allprojects {
     repositories {
         google()
